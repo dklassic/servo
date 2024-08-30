@@ -40,16 +40,16 @@ jobs:
       - name: Set bencher opts for PRs (label try run)
         if: github.event_name == 'pull_request_target'
         run: |
-            echo "RUN_BENCHER_OPTIONS=--branch '${{ github.event.number }}/PR' \
-            --branch-start-point '${{ github.base_ref }}' \
-            --branch-start-point-hash '${{ github.event.pull_request.base.sha }}' \
+            echo "RUN_BENCHER_OPTIONS=--branch ${{ github.event.number }}/PR \
+            --branch-start-point ${{ github.base_ref }} \
+            --branch-start-point-hash ${{ github.event.pull_request.base.sha }} \
             --branch-reset \
-            --github-actions '${{ secrets.GITHUB_TOKEN }}'" >> "$GITHUB_ENV"
+            --github-actions ${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
       - name: Set bencher opts for main
         if: ${{ github.event_name == 'push' && github.ref_name == 'main' }}
         run: |
-            echo "RUN_BENCHER_OPTIONS=--branch 'main' \
-            --github-actions '${{ secrets.GITHUB_TOKEN }}'" >> "$GITHUB_ENV"
+            echo "RUN_BENCHER_OPTIONS=--branch main \
+            --github-actions ${{ secrets.GITHUB_TOKEN }}" >> "$GITHUB_ENV"
       - name: Set bencher opts for try branch
         if: ${{ github.event_name == 'push' && github.ref_name == 'try' }}
         run: |
@@ -61,12 +61,15 @@ jobs:
             --branch-start-point-hash $(git merge-base upstream/main HEAD) \
             --branch-reset" >> "$GITHUB_ENV"
       - name: File size
-        run: bencher run --file-size ./target/release/servo --adapter json ${{ env.CONST_BENCHER_OPTIONS }} $RUN_BENCHER_OPTIONS
+        run: ./mach test-size -r --bmf-output size.json
       - name: Speedometer
         run: |
             python3 ./mach test-speedometer -r --bmf-output speedometer.json
-            bencher run --adapter json --file speedometer.json ${{ env.CONST_BENCHER_OPTIONS }} $RUN_BENCHER_OPTIONS
       - name: Dromaeo
         run: |
             python3 ./mach test-dromaeo -r dom --bmf-output dromaeo.json
-            bencher run --adapter json --file dromaeo.json ${{ env.CONST_BENCHER_OPTIONS }} $RUN_BENCHER_OPTIONS
+      # we join results and send all data once to have it all in one report
+      - name: Send results
+        run: |
+          python3 ./mach merge-bencher-reports size.json speedometer.json dromaeo.json --bmf-output b.json
+          bencher run --adapter json --file b.json ${{ env.CONST_BENCHER_OPTIONS }} $RUN_BENCHER_OPTIONS
