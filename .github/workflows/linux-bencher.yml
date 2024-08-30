@@ -68,5 +68,5 @@ jobs:
             bencher run --adapter json --file speedometer.json ${{ env.CONST_BENCHER_OPTIONS }} $RUN_BENCHER_OPTIONS
       - name: Dromaeo
         run: |
-            python3 ./mach test-dromaeo -r --bmf-output dromaeo.json
+            python3 ./mach test-dromaeo -r dom --bmf-output dromaeo.json
             bencher run --adapter json --file dromaeo.json ${{ env.CONST_BENCHER_OPTIONS }} $RUN_BENCHER_OPTIONS
