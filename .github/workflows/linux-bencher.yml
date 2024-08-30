@@ -56,6 +56,7 @@ jobs:
             git remote add upstream https://github.com/servo/servo
             git fetch upstream main
             echo "RUN_BENCHER_OPTIONS=--branch try \
+            --hash $(git rev-parse HEAD~1) \
             --branch-start-point main \
             --branch-start-point-hash $(git merge-base upstream/main HEAD) \
             --branch-reset" >> "$GITHUB_ENV"
