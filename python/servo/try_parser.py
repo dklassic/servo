@@ -192,7 +192,7 @@ class TestParser(unittest.TestCase):
         self.assertDictEqual(json.loads(Config("").to_json()),
                              {"fail_fast": False, "matrix": [
                               {
-                                  'bencher': False,
+                                  'bencher': True,
                                   "name": "Linux WPT",
                                   "workflow": "linux",
                                   "wpt_layout": "all",
