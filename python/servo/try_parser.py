@@ -88,7 +88,7 @@ def handle_preset(s: str) -> Optional[JobConfig]:
     elif s in ["win", "windows"]:
         return JobConfig("Windows", Workflow.WINDOWS, unit_tests=True)
     elif s in ["wpt", "linux-wpt"]:
-        return JobConfig("Linux WPT", Workflow.LINUX, unit_tests=True, wpt_layout=Layout.all())
+        return JobConfig("Linux WPT", Workflow.LINUX, unit_tests=True, wpt_layout=Layout.all(), bencher=True)
     elif s in ["wpt-2013", "linux-wpt-2013"]:
         return JobConfig("Linux WPT", Workflow.LINUX, wpt_layout=Layout.layout2013)
     elif s in ["wpt-2020", "linux-wpt-2020"]:
