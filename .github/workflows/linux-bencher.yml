@@ -10,6 +10,7 @@ env:
 
 permissions:
   checks: write
+  issues: write
 
 jobs:
   linux-bencher:
