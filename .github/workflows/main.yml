@@ -36,6 +36,7 @@ jobs:
     with:
       unit-tests: true
       wpt-layout: ${{ github.event_name == 'pull_request' && 'none' || '2020' }}
+      bencher: ${{ github.event_name == 'push' }}
     secrets: inherit
 
   lint:
