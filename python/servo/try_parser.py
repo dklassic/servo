@@ -125,9 +125,11 @@ class Encoder(json.JSONEncoder):
         return json.JSONEncoder.default(self, o)
 
 
+
 class Config(object):
     def __init__(self, s: Optional[str] = None):
         self.fail_fast: bool = False
+        
         self.matrix: list[JobConfig] = list()
         if s is not None:
             self.parse(s)
