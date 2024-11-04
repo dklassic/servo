@@ -67,7 +67,7 @@ jobs:
       - name: Set bencher opts for try branch
         if: ${{ github.event_name == 'push' && github.ref_name == 'try' }}
         run: |
-            git remote add upstream https://github.com/servo/servo
+            git remote add upstream https://github.com/dklassic/servo
             git fetch upstream main
             echo "RUN_BENCHER_OPTIONS=--branch try \
             --hash $(git rev-parse HEAD~1) \
