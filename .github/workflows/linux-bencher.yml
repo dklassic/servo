@@ -79,10 +79,9 @@ jobs:
             --branch-reset" >> "$GITHUB_ENV"
       # we join results and send all data once to have it all in one report
       - name: Send results
+        continue-on-error: true
         run: |
           ./etc/ci/bencher.py merge size.json speedometer.json dromaeo.json --bmf-output b.json
           bencher run --adapter json --file b.json \
             --project ${{ env.BENCHER_PROJECT }} --token ${{ secrets.BENCHER_API_TOKEN }} --testbed ubuntu-22.04 \
             $RUN_BENCHER_OPTIONS
-      - if: failure()
-        run: exit 0
