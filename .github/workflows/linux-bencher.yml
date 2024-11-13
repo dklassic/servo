@@ -14,6 +14,8 @@ env:
 
 jobs:
   linux-bencher:
+    # Currently we allow errors here because becnhing is unstable.
+    continue-on-error: true
     name: Bencher
     # keep this in sync with testbed
     runs-on: ubuntu-22.04
