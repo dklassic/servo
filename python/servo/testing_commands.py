@@ -530,7 +530,7 @@ class MachCommands(CommandBase):
             "https://extraordinary-frangollo-7ab0c9.netlify.app?headless=1",
             "--pref", "dom.allow_scripts_to_close_windows",
             "--window-size=1100x900",
-            "--headless"], timeout=1200).decode())
+            "--headless"], timeout=120).decode())
 
         print(f"Score: {speedometer['Score']['mean']} ± {speedometer['Score']['delta']}")
 
