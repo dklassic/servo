@@ -538,6 +538,9 @@ class MachCommands(CommandBase):
             output = dict()
 
             def parse_speedometer_result(result):
+                for k, v in result.items():
+                    print(k, v)
+
                 if result['unit'] == "ms":
                     output[f"Speedometer/{result['name']}"] = {
                         'latency': {  # speedometer has ms we need to convert to ns
