@@ -560,8 +560,8 @@ class MachCommands(CommandBase):
                 else:
                     raise "Unknown unit!"
 
-                for child in result['children']:
-                    parse_speedometer_result(child)
+                # for child in result['children']:
+                #     parse_speedometer_result(child)
 
             for v in speedometer.values():
                 parse_speedometer_result(v)
