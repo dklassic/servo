@@ -88,7 +88,7 @@ jobs:
         if: ${{ inputs.stripped-file-size == true }}
         uses: KyleMayes/install-llvm-action@v2
         with:
-          version: "12.0"
+          version: "18.0"
       - name: Install llvm-strip dependency
         if: ${{ inputs.stripped-file-size == true }}
         run: sudo apt install libncurses5
