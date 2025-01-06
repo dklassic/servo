@@ -89,22 +89,12 @@ def handle_preset(s: str) -> Optional[JobConfig]:
 
     if s == "linux":
         return JobConfig("Linux", Workflow.LINUX, unit_tests=True)
-    elif s in ["linux-perf", "bencher"]:
+    elif s in ["perf", "linux-perf", "bencher"]:
         return JobConfig("Linux perf", Workflow.LINUX, bencher=True)
-    elif s == "linux-prod-perf":
-        return JobConfig("Linux prod perf", Workflow.LINUX, bencher=True, profile="production")
     elif s in ["mac", "macos"]:
         return JobConfig("MacOS", Workflow.MACOS, unit_tests=True)
-    elif s == "macos-perf":
-        return JobConfig("MacOS", Workflow.MACOS, bencher=True)
-    elif s == "macos-prod-perf":
-        return JobConfig("MacOS", Workflow.MACOS, bencher=True, profile="production")
     elif s in ["win", "windows"]:
         return JobConfig("Windows", Workflow.WINDOWS, unit_tests=True)
-    elif s == "windows-perf":
-        return JobConfig("Windows", Workflow.WINDOWS, bencher=True)
-    elif s == "windows-prod-perf":
-        return JobConfig("Windows", Workflow.WINDOWS, bencher=True, profile="production")
     elif s in ["wpt-2013", "linux-wpt-2013"]:
         return JobConfig("Linux WPT", Workflow.LINUX, wpt_layout=Layout.layout2013)
     elif s in ["wpt-2020", "linux-wpt-2020", "wpt", "linux-wpt"]:
@@ -117,16 +107,8 @@ def handle_preset(s: str) -> Optional[JobConfig]:
         return JobConfig("MacOS WPT", Workflow.MACOS, wpt_layout=Layout.layout2020)
     elif s == "android":
         return JobConfig("Android", Workflow.ANDROID)
-    elif s == "android-perf":
-        return JobConfig("Android", Workflow.ANDROID, bencher=True)
-    elif s == "android-prod-perf":
-        return JobConfig("Android", Workflow.ANDROID, bencher=True, profile="production")
     elif s in ["ohos", "openharmony"]:
         return JobConfig("OpenHarmony", Workflow.OHOS)
-    elif s == "ohos-perf":
-        return JobConfig("OpenHarmony", Workflow.OHOS, bencher=True)
-    elif s == "ohos-prod-perf":
-        return JobConfig("OpenHarmony", Workflow.OHOS, bencher=True, profile="production")
     elif s == "webgpu":
         return JobConfig("WebGPU CTS", Workflow.LINUX,
                          wpt_layout=Layout.layout2020,  # reftests are mode for new layout
@@ -171,12 +153,7 @@ class Config(object):
             if word == "full":
                 words.extend(["linux", "linux-wpt", "linux-perf", "macos", "windows", "android", "ohos", "lint"])
                 continue  # skip over keyword
-            if word == "perf":
-                words.extend(["linux-perf", "macos-perf", "windows-perf", "android-perf", "ohos-perf"])
-                continue  # skip over keyword
-            if word == "prod-perf":
-                words.extend(["linux-prod-perf", "macos-prod-perf", "windows-prod-perf", "android-prod-perf", "ohos-prod-perf"])
-                continue  # skip over keyword
+
             job = handle_preset(word)
             if job is None:
                 print(f"Ignoring unknown preset {word}")
@@ -230,30 +207,12 @@ class TestParser(unittest.TestCase):
                                   "wpt_args": ""
                               },
                               {
-                                  "name": "Linux prod perf",
-                                  "workflow": "linux",
-                                  "wpt_layout": "none",
-                                  "profile": "production",
-                                  "unit_tests": False,
-                                  'bencher': True,
-                                  "wpt_args": ""
-                              },
-                              {
                                   "name": "MacOS",
                                   "workflow": "macos",
                                   "wpt_layout": "none",
                                   "profile": "release",
                                   "unit_tests": True,
-                                  'bencher': True,
-                                  "wpt_args": ""
-                              },
-                              {
-                                  "name": "MacOS",
-                                  "workflow": "macos",
-                                  "wpt_layout": "none",
-                                  "profile": "production",
-                                  "unit_tests": False,
-                                  'bencher': True,
+                                  'bencher': False,
                                   "wpt_args": ""
                               },
                               {
@@ -262,16 +221,7 @@ class TestParser(unittest.TestCase):
                                   "wpt_layout": "none",
                                   "profile": "release",
                                   "unit_tests": True,
-                                  'bencher': True,
-                                  "wpt_args": ""
-                              },
-                              {
-                                  "name": "Windows",
-                                  "workflow": "windows",
-                                  "wpt_layout": "none",
-                                  "profile": "production",
-                                  "unit_tests": False,
-                                  'bencher': True,
+                                  'bencher': False,
                                   "wpt_args": ""
                               },
                               {
@@ -280,7 +230,7 @@ class TestParser(unittest.TestCase):
                                   "wpt_layout": "none",
                                   "profile": "release",
                                   "unit_tests": False,
-                                  'bencher': True,
+                                  'bencher': False,
                                   "wpt_args": ""
                               },
                               {
@@ -289,16 +239,7 @@ class TestParser(unittest.TestCase):
                                   "wpt_layout": "none",
                                   "profile": "release",
                                   "unit_tests": False,
-                                  'bencher': True,
-                                  "wpt_args": ""
-                              },
-                              {
-                                  "name": "OpenHarmony",
-                                  "workflow": "ohos",
-                                  "wpt_layout": "none",
-                                  "profile": "production",
-                                  "unit_tests": False,
-                                  'bencher': True,
+                                  'bencher': False,
                                   "wpt_args": ""
                               },
                               {

@@ -30,7 +30,6 @@ jobs:
     with:
       profile: ${{ inputs.profile }}
       unit-tests: ${{ inputs.unit-tests }}
-      bencher: ${{ inputs.bencher }}
 
   macos:
     if: ${{ inputs.workflow == 'macos' }}
@@ -42,7 +41,6 @@ jobs:
       wpt-layout: ${{ inputs.wpt-layout }}
       unit-tests: ${{ inputs.unit-tests }}
       wpt-args: ${{ inputs.wpt-args }}
-      bencher: ${{ inputs.bencher }}
 
   linux:
     if: ${{ inputs.workflow == 'linux' }}
@@ -69,13 +67,10 @@ jobs:
     secrets: inherit
     with:
       profile: ${{ inputs.profile }}
-      bencher: ${{ inputs.bencher }}
 
   ohos:
     if: ${{ inputs.workflow == 'ohos' }}
     name: OpenHarmony
     uses: ./.github/workflows/ohos.yml
-    secrets: inherit
     with:
       profile: ${{ inputs.profile }}
-      bencher: ${{ inputs.bencher }}
