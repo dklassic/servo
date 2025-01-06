@@ -89,7 +89,7 @@ def handle_preset(s: str) -> Optional[JobConfig]:
 
     if s == "linux":
         return JobConfig("Linux", Workflow.LINUX, unit_tests=True)
-    elif s in ["perf", "linux-perf", "bencher"]:
+    elif s in ["linux-perf", "bencher"]:
         return JobConfig("Linux perf", Workflow.LINUX, bencher=True)
     elif s == "linux-prod-perf":
         return JobConfig("Linux prod perf", Workflow.LINUX, bencher=True, profile="production")
@@ -169,14 +169,14 @@ class Config(object):
                 self.fail_fast = True
                 continue  # skip over keyword
             if word == "full":
-                words.extend(["linux", "linux-wpt", "linux-perf", "linux-prod-perf"])
-                words.extend(["macos", "macos-perf", "macos-prod-perf"])
-                words.extend(["windows", "windows-perf", "windows-prod-perf"])
-                words.extend(["android", "android-perf"])
-                words.extend(["ohos", "ohos-perf", "ohos-prod-perf"])
-                words.extend(["lint"])
+                words.extend(["linux", "linux-wpt", "linux-perf", "macos", "windows", "android", "ohos", "lint"])
                 continue  # skip over keyword
-
+            if word == "perf":
+                words.extend(["linux-perf", "macos-perf", "windows-perf", "android-perf", "ohos-perf"])
+                continue  # skip over keyword
+            if word == "prod-perf":
+                words.extend(["linux-prod-perf", "macos-prod-perf", "windows-prod-perf", "android-prod-perf", "ohos-prod-perf"])
+                continue  # skip over keyword
             job = handle_preset(word)
             if job is None:
                 print(f"Ignoring unknown preset {word}")
