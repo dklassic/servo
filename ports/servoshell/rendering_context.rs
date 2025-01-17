@@ -22,6 +22,7 @@ use surfman::{
 #[derive(Clone)]
 pub struct SurfmanRenderingContext(Rc<RenderingContextData>);
 
+
 impl SurfmanRenderingContext {
     pub fn create(
         connection: &Connection,
@@ -183,6 +184,7 @@ impl SurfmanRenderingContext {
         device.context_surface_info(context)
     }
 
+    #[allow(dead_code)]
     pub fn surface_info(&self, surface: &Surface) -> SurfaceInfo {
         let device = &self.0.device.borrow();
         device.surface_info(surface)
