@@ -22,7 +22,6 @@ use servo::servo_config::pref;
 use servo::servo_geometry::DeviceIndependentPixel;
 use servo::webrender_api::units::{DeviceIntPoint, DeviceIntRect, DeviceIntSize, DevicePixel};
 use servo::webrender_api::ScrollLocation;
-use servo::webrender_traits::RenderingContext;
 use surfman::{Context, Device, SurfaceType};
 use winit::dpi::{LogicalSize, PhysicalPosition, PhysicalSize};
 use winit::event::{ElementState, KeyEvent, MouseButton, MouseScrollDelta, TouchPhase};
@@ -34,6 +33,7 @@ use winit::window::Icon;
 use super::geometry::{winit_position_to_euclid_point, winit_size_to_euclid_size};
 use super::keyutils::keyboard_event_from_winit;
 use super::window_trait::{WindowPortsMethods, LINE_HEIGHT};
+use crate::rendering_context::SurfmanRenderingContext;
 
 pub struct Window {
     winit_window: winit::window::Window,

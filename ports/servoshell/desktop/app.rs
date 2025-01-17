@@ -113,7 +113,7 @@ impl App {
             let adapter = connection
                 .create_software_adapter()
                 .expect("Failed to create adapter");
-            RenderingContext::create(
+            SurfmanRenderingContext::create(
                 &connection,
                 &adapter,
                 Some(self.opts.initial_window_size.to_untyped().to_i32()),
@@ -129,7 +129,7 @@ impl App {
             let adapter = connection
                 .create_adapter()
                 .expect("Failed to create adapter");
-            RenderingContext::create(&connection, &adapter, None)
+            SurfmanRenderingContext::create(&connection, &adapter, None)
                 .expect("Failed to create WR surfman")
         };
 
