@@ -628,7 +628,7 @@ where
         }
 
         let (native_display, gl_context) =
-            match Self::get_native_media_display_and_gl_context(rendering_context) {
+            match Self::get_native_media_display_and_gl_context(&rendering_context.clone()) {
                 Some((native_display, gl_context)) => (native_display, gl_context),
                 None => {
                     return (
