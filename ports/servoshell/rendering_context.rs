@@ -22,7 +22,6 @@ use surfman::{
 #[derive(Clone)]
 pub struct SurfmanRenderingContext(Rc<RenderingContextData>);
 
-
 impl SurfmanRenderingContext {
     pub fn create(
         connection: &Connection,
