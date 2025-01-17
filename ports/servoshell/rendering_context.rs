@@ -8,7 +8,7 @@ use std::cell::{Ref, RefCell, RefMut};
 use std::ffi::c_void;
 use std::rc::Rc;
 
-use servo::euclid::Size2D;
+use euclid::default::Size2D;
 use servo::webrender_traits::RenderingContext;
 use surfman::chains::{PreserveBuffer, SwapChain};
 use surfman::{
