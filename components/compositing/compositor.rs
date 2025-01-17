@@ -165,7 +165,7 @@ pub struct IOCompositor<Window: WindowMethods + ?Sized> {
     webrender_api: RenderApi,
 
     /// The surfman instance that webrender targets
-    rendering_context: RenderingContext,
+    rendering_context: Rc<dyn RenderingContext>,
 
     /// The GL bindings for webrender
     webrender_gl: Rc<dyn gleam::gl::Gl>,
@@ -412,7 +412,9 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
     }
 
     pub fn deinit(self) {
-        if let Err(err) = self.rendering_context.make_gl_context_current() {
+        let device = self.rendering_context.device();
+        let context = self.rendering_context.context();
+        if let Err(err) = device.make_context_current(&context) {
             warn!("Failed to make GL context current: {:?}", err);
         }
         self.webrender.deinit();
@@ -469,8 +471,19 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
     /// We need to unbind the surface so that we don't try to use it again.
     pub fn invalidate_native_surface(&mut self) {
         debug!("Invalidating native surface in compositor");
-        if let Err(e) = self.rendering_context.unbind_native_surface_from_context() {
-            warn!("Unbinding native surface from context failed ({:?})", e);
+        let device = self.rendering_context.device();
+        let mut context = self.rendering_context.context_mut();
+        match device.unbind_surface_from_context(&mut context) {
+            Ok(surface) => {
+                if let Some(mut surface) = surface {
+                    if let Err(e) = device.destroy_surface(&mut context, &mut surface) {
+                        warn!("Unbinding native surface from context failed ({:?})", e);
+                    }
+                }
+            },
+            Err(e) => {
+                warn!("Unbinding native surface from context failed ({:?})", e);
+            },
         }
     }
 
@@ -481,7 +494,7 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
     #[allow(clippy::not_unsafe_ptr_arg_deref)] // It has an unsafe block inside
     pub fn replace_native_surface(&mut self, native_widget: *mut c_void, coords: DeviceIntSize) {
         debug!("Replacing native surface in compositor: {native_widget:?}");
-        let connection = self.rendering_context.connection();
+        let connection = self.rendering_context.device().connection();
         let native_widget =
             unsafe { connection.create_native_widget_from_ptr(native_widget, coords.to_untyped()) };
         if let Err(e) = self
@@ -2025,7 +2038,11 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
 
         let size = self.embedder_coordinates.framebuffer.to_u32();
 
-        if let Err(err) = self.rendering_context.make_gl_context_current() {
+        if let Err(err) = self
+            .rendering_context
+            .device()
+            .make_context_current(&self.rendering_context.context())
+        {
             warn!("Failed to make GL context current: {:?}", err);
         }
         self.assert_no_gl_error();
@@ -2070,7 +2087,8 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
             // Bind the webrender framebuffer
             let framebuffer_object = self
                 .rendering_context
-                .context_surface_info()
+                .device()
+                .context_surface_info(&self.rendering_context.context())
                 .unwrap_or(None)
                 .map(|info| info.framebuffer_object)
                 .unwrap_or(0);
@@ -2403,7 +2421,10 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
         self.webxr_main_thread.run_one_frame();
 
         // The WebXR thread may make a different context current
-        let _ = self.rendering_context.make_gl_context_current();
+        let _ = self
+            .rendering_context
+            .device()
+            .make_context_current(&self.rendering_context.context());
 
         if !self.pending_scroll_zoom_events.is_empty() {
             self.process_pending_scroll_events()

@@ -23,6 +23,7 @@ use servo::{self, Servo};
 use surfman::{Connection, SurfaceType};
 use xcomponent_sys::{OH_NativeXComponent, OH_NativeXComponent_GetXComponentSize};
 
+use super::super::super::rendering_context::SurfmanRenderingContext;
 use crate::egl::host_trait::HostTrait;
 use crate::egl::ohos::resources::ResourceReaderInstance;
 use crate::egl::ohos::InitOpts;
@@ -93,7 +94,7 @@ pub fn init(
     let surface_type = SurfaceType::Widget { native_widget };
 
     info!("Creating rendering context");
-    let rendering_context = RenderingContext::create(&connection, &adapter, None)
+    let rendering_context = SurfmanRenderingContext::create(&connection, &adapter, None)
         .or(Err("Failed to create surface manager"))?;
     let surface = rendering_context
         .create_surface(surface_type)
@@ -119,7 +120,7 @@ pub fn init(
     let servo = Servo::new(
         opts,
         preferences,
-        rendering_context.clone(),
+        Rc::new(rendering_context.clone()) as Rc<dyn RenderingContext>,
         embedder_callbacks,
         window_callbacks.clone(),
         None, /* user_agent */

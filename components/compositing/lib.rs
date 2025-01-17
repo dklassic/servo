@@ -40,7 +40,7 @@ pub struct InitialCompositorState {
     pub webrender: webrender::Renderer,
     pub webrender_document: DocumentId,
     pub webrender_api: RenderApi,
-    pub rendering_context: RenderingContext,
+    pub rendering_context: Rc<dyn RenderingContext>,
     pub webrender_gl: Rc<dyn gleam::gl::Gl>,
     #[cfg(feature = "webxr")]
     pub webxr_main_thread: webxr::MainThreadRegistry,

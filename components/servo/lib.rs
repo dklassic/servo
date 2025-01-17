@@ -236,7 +236,7 @@ where
     pub fn new(
         opts: Opts,
         preferences: Preferences,
-        rendering_context: RenderingContext,
+        rendering_context: Rc<dyn RenderingContext>,
         mut embedder: Box<dyn EmbedderMethods>,
         window: Rc<Window>,
         user_agent: Option<String>,
@@ -282,20 +282,34 @@ where
         };
 
         // Get GL bindings
-        let webrender_gl = match rendering_context.connection().gl_api() {
-            GLApi::GL => unsafe { gl::GlFns::load_with(|s| rendering_context.get_proc_address(s)) },
+        let webrender_gl = match rendering_context.device().connection().gl_api() {
+            GLApi::GL => unsafe {
+                gl::GlFns::load_with(|s| {
+                    rendering_context
+                        .device()
+                        .get_proc_address(&rendering_context.context(), s)
+                })
+            },
             GLApi::GLES => unsafe {
-                gl::GlesFns::load_with(|s| rendering_context.get_proc_address(s))
+                gl::GlesFns::load_with(|s| {
+                    rendering_context
+                        .device()
+                        .get_proc_address(&rendering_context.context(), s)
+                })
             },
         };
 
         // Make sure the gl context is made current.
-        rendering_context.make_gl_context_current().unwrap();
+        rendering_context
+            .device()
+            .make_context_current(&rendering_context.context())
+            .unwrap();
         debug_assert_eq!(webrender_gl.get_error(), gleam::gl::NO_ERROR,);
 
         // Bind the webrender framebuffer
         let framebuffer_object = rendering_context
-            .context_surface_info()
+            .device()
+            .context_surface_info(&rendering_context.context())
             .unwrap_or(None)
             .map(|info| info.framebuffer_object)
             .unwrap_or(0);
@@ -539,9 +553,12 @@ where
 
     #[cfg(all(target_os = "linux", not(target_env = "ohos")))]
     fn get_native_media_display_and_gl_context(
-        rendering_context: &RenderingContext,
+        rendering_context: Rc<dyn RenderingContext>,
     ) -> Option<(NativeDisplay, GlContext)> {
-        let gl_context = match rendering_context.native_context() {
+        let gl_context = match rendering_context
+            .device()
+            .native_context(&rendering_context.context())
+        {
             NativeContext::Default(LinuxNativeContext::Default(native_context)) => {
                 GlContext::Egl(native_context.egl_context as usize)
             },
@@ -551,7 +568,7 @@ where
             NativeContext::Alternate(_) => return None,
         };
 
-        let native_display = match rendering_context.connection().native_connection() {
+        let native_display = match rendering_context.device().connection().native_connection() {
             NativeConnection::Default(LinuxNativeConnection::Default(connection)) => {
                 NativeDisplay::Egl(connection.0 as usize)
             },
@@ -566,14 +583,17 @@ where
     // @TODO(victor): https://github.com/servo/media/pull/315
     #[cfg(target_os = "windows")]
     fn get_native_media_display_and_gl_context(
-        rendering_context: &RenderingContext,
+        rendering_context: Rc<dyn RenderingContext>,
     ) -> Option<(NativeDisplay, GlContext)> {
         #[cfg(feature = "no-wgl")]
         {
-            let gl_context =
-                GlContext::Egl(rendering_context.native_context().egl_context as usize);
-            let native_display =
-                NativeDisplay::Egl(rendering_context.native_device().egl_display as usize);
+            let device = rendering_context.device();
+            let gl_context = GlContext::Egl(
+                device
+                    .native_context(&rendering_context.context())
+                    .egl_context as usize,
+            );
+            let native_display = NativeDisplay::Egl(device.native_device().egl_display as usize);
             Some((native_display, gl_context))
         }
         #[cfg(not(feature = "no-wgl"))]
@@ -585,7 +605,7 @@ where
         all(target_os = "linux", not(target_env = "ohos"))
     )))]
     fn get_native_media_display_and_gl_context(
-        _rendering_context: &RenderingContext,
+        _rendering_context: Rc<dyn RenderingContext>,
     ) -> Option<(NativeDisplay, GlContext)> {
         None
     }
@@ -593,7 +613,7 @@ where
     fn create_media_window_gl_context(
         external_image_handlers: &mut WebrenderExternalImageHandlers,
         external_images: Arc<Mutex<WebrenderExternalImageRegistry>>,
-        rendering_context: &RenderingContext,
+        rendering_context: &Rc<dyn RenderingContext>,
     ) -> (WindowGLContext, Option<GLPlayerThreads>) {
         if !pref!(media_glvideo_enabled) {
             return (
@@ -608,7 +628,7 @@ where
         }
 
         let (native_display, gl_context) =
-            match Self::get_native_media_display_and_gl_context(rendering_context) {
+            match Self::get_native_media_display_and_gl_context(rendering_context.clone()) {
                 Some((native_display, gl_context)) => (native_display, gl_context),
                 None => {
                     return (
@@ -623,8 +643,11 @@ where
                 },
             };
 
-        let api = rendering_context.connection().gl_api();
-        let attributes = rendering_context.context_attributes();
+        let device = rendering_context.device();
+        let api = device.connection().gl_api();
+        let context = rendering_context.context();
+        let descriptor = &device.context_descriptor(&context);
+        let attributes = device.context_descriptor_attributes(descriptor);
         let GLVersion { major, minor } = attributes.version;
         let gl_api = match api {
             GLApi::GL if major >= 3 && minor >= 2 => GlApi::OpenGL3,
