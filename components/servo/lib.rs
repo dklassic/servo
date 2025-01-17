@@ -583,7 +583,7 @@ where
     // @TODO(victor): https://github.com/servo/media/pull/315
     #[cfg(target_os = "windows")]
     fn get_native_media_display_and_gl_context(
-        rendering_context: &Rc<dyn RenderingContext>,
+        rendering_context: Rc<dyn RenderingContext>,
     ) -> Option<(NativeDisplay, GlContext)> {
         #[cfg(feature = "no-wgl")]
         {
@@ -628,7 +628,7 @@ where
         }
 
         let (native_display, gl_context) =
-            match Self::get_native_media_display_and_gl_context(&rendering_context.clone()) {
+            match Self::get_native_media_display_and_gl_context(rendering_context.clone()) {
                 Some((native_display, gl_context)) => (native_display, gl_context),
                 None => {
                     return (
