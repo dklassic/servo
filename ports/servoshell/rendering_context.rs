@@ -3,13 +3,12 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #![deny(unsafe_code)]
-#[allow(dead_code)]
 
 use std::cell::{Ref, RefCell, RefMut};
 use std::ffi::c_void;
 use std::rc::Rc;
 
-use euclid::default::Size2D;
+use servo::euclid::Size2D;
 use servo::webrender_traits::RenderingContext;
 use surfman::chains::{PreserveBuffer, SwapChain};
 use surfman::{
@@ -93,12 +92,14 @@ impl SurfmanRenderingContext {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub fn destroy_surface(&self, mut surface: Surface) -> Result<(), Error> {
         let device = &self.0.device.borrow();
         let context = &mut self.0.context.borrow_mut();
         device.destroy_surface(context, &mut surface)
     }
 
+    #[allow(dead_code)]
     pub fn create_surface_texture(&self, surface: Surface) -> Result<SurfaceTexture, Error> {
         let device = &self.0.device.borrow();
         let context = &mut self.0.context.borrow_mut();
@@ -107,6 +108,7 @@ impl SurfmanRenderingContext {
             .map_err(|(error, _)| error)
     }
 
+    #[allow(dead_code)]
     pub fn destroy_surface_texture(
         &self,
         surface_texture: SurfaceTexture,
@@ -124,12 +126,14 @@ impl SurfmanRenderingContext {
         device.make_context_current(context)
     }
 
+    #[allow(dead_code)]
     pub fn swap_chain(&self) -> Result<&SwapChain<Device>, Error> {
         self.0.swap_chain.as_ref().ok_or(Error::WidgetAttached)
     }
 
     /// Invoke a closure with the surface associated with the current front buffer.
     /// This can be used to create a surfman::SurfaceTexture to blit elsewhere.
+    #[allow(dead_code)]
     pub fn with_front_buffer<F: FnOnce(&Device, Surface) -> Surface>(&self, f: F) {
         let device = &mut self.0.device.borrow_mut();
         let context = &mut self.0.context.borrow_mut();
@@ -146,22 +150,26 @@ impl SurfmanRenderingContext {
         device.connection()
     }
 
+    #[allow(dead_code)]
     pub fn adapter(&self) -> Adapter {
         let device = &self.0.device.borrow();
         device.adapter()
     }
 
+    #[allow(dead_code)]
     pub fn native_context(&self) -> NativeContext {
         let device = &self.0.device.borrow();
         let context = &self.0.context.borrow();
         device.native_context(context)
     }
 
+    #[allow(dead_code)]
     pub fn native_device(&self) -> NativeDevice {
         let device = &self.0.device.borrow();
         device.native_device()
     }
 
+    #[allow(dead_code)]
     pub fn context_attributes(&self) -> ContextAttributes {
         let device = &self.0.device.borrow();
         let context = &self.0.context.borrow();
@@ -180,6 +188,7 @@ impl SurfmanRenderingContext {
         device.surface_info(surface)
     }
 
+    #[allow(dead_code)]
     pub fn surface_texture_object(&self, surface: &SurfaceTexture) -> u32 {
         let device = &self.0.device.borrow();
         device.surface_texture_object(surface)
@@ -191,6 +200,7 @@ impl SurfmanRenderingContext {
         device.get_proc_address(context, name)
     }
 
+    #[allow(dead_code)]
     pub fn unbind_native_surface_from_context(&self) -> Result<(), Error> {
         let device = self.0.device.borrow_mut();
         let mut context = self.0.context.borrow_mut();

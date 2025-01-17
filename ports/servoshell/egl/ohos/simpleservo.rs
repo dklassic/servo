@@ -18,12 +18,11 @@ use servo::embedder_traits::resources;
 pub use servo::embedder_traits::EventLoopWaker;
 use servo::euclid::Size2D;
 use servo::servo_url::ServoUrl;
-use servo::webrender_traits::RenderingContext;
 use servo::{self, Servo};
 use surfman::{Connection, SurfaceType};
 use xcomponent_sys::{OH_NativeXComponent, OH_NativeXComponent_GetXComponentSize};
 
-use super::rendering_context::SurfmanRenderingContext;
+use super::super::super::rendering_context::SurfmanRenderingContext;
 use crate::egl::host_trait::HostTrait;
 use crate::egl::ohos::resources::ResourceReaderInstance;
 use crate::egl::ohos::InitOpts;
