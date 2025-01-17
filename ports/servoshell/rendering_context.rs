@@ -3,6 +3,7 @@
  * file, You can obtain one at https://mozilla.org/MPL/2.0/. */
 
 #![deny(unsafe_code)]
+#[allow(dead_code)]
 
 use std::cell::{Ref, RefCell, RefMut};
 use std::ffi::c_void;
