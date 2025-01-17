@@ -18,8 +18,8 @@ use servo::embedder_traits::resources;
 pub use servo::embedder_traits::EventLoopWaker;
 use servo::euclid::Size2D;
 use servo::servo_url::ServoUrl;
-use servo::{self, Servo};
 use servo::webrender_traits::RenderingContext;
+use servo::{self, Servo};
 use surfman::{Connection, SurfaceType};
 use xcomponent_sys::{OH_NativeXComponent, OH_NativeXComponent_GetXComponentSize};
 

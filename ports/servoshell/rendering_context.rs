@@ -120,6 +120,7 @@ impl SurfmanRenderingContext {
             .map_err(|(error, _)| error)
     }
 
+    #[allow(dead_code)]
     pub fn make_gl_context_current(&self) -> Result<(), Error> {
         let device = &self.0.device.borrow();
         let context = &self.0.context.borrow();
@@ -145,6 +146,7 @@ impl SurfmanRenderingContext {
         device.bind_surface_to_context(context, surface).unwrap();
     }
 
+    #[allow(dead_code)]
     pub fn connection(&self) -> Connection {
         let device = &self.0.device.borrow();
         device.connection()
@@ -195,6 +197,7 @@ impl SurfmanRenderingContext {
         device.surface_texture_object(surface)
     }
 
+    #[allow(dead_code)]
     pub fn get_proc_address(&self, name: &str) -> *const c_void {
         let device = &self.0.device.borrow();
         let context = &self.0.context.borrow();
