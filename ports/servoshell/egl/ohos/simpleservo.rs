@@ -120,7 +120,7 @@ pub fn init(
     let servo = Servo::new(
         opts,
         preferences,
-        rendering_context.clone(),
+        Rc::new(rendering_context.clone()) as Rc<dyn RenderingContext>,
         embedder_callbacks,
         window_callbacks.clone(),
         None, /* user_agent */
