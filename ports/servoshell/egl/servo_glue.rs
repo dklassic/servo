@@ -29,6 +29,7 @@ use servo::webrender_api::units::DevicePixel;
 use servo::webrender_api::ScrollLocation;
 use servo::{Servo, TopLevelBrowsingContextId};
 
+use super::super::rendering_context::SurfmanRenderingContext;
 use crate::egl::host_trait::HostTrait;
 use crate::prefs::ServoShellPreferences;
 
