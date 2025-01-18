@@ -36,6 +36,7 @@ use super::webview::{LoadStatus, WebViewManager};
 use super::window_trait::WindowPortsMethods;
 use crate::parser::location_bar_input_to_url;
 use crate::prefs::ServoShellPreferences;
+use crate::rendering_context::SurfmanRenderingContext;
 
 pub struct Minibrowser {
     pub context: EguiGlow,

@@ -59,7 +59,7 @@ pub struct Window {
 impl Window {
     pub fn new(
         opts: &Opts,
-        rendering_context: &RenderingContext,
+        rendering_context: &SurfmanRenderingContext,
         window_size: Size2D<u32, DeviceIndependentPixel>,
         event_loop: &ActiveEventLoop,
         no_native_titlebar: bool,

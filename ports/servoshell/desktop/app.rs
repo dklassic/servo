@@ -40,6 +40,7 @@ use crate::desktop::tracing::trace_winit_event;
 use crate::desktop::window_trait::WindowPortsMethods;
 use crate::parser::get_default_url;
 use crate::prefs::ServoShellPreferences;
+use crate::rendering_context::SurfmanRenderingContext;
 
 pub struct App {
     opts: Opts,
@@ -206,7 +207,7 @@ impl App {
         let mut servo = Servo::new(
             self.opts.clone(),
             self.preferences.clone(),
-            rendering_context,
+            Rc::new(rendering_context) as Rc<dyn RenderingContext>,
             embedder,
             window.clone(),
             self.servo_shell_preferences.user_agent.clone(),

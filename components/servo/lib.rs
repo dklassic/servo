@@ -236,7 +236,7 @@ where
     pub fn new(
         opts: Opts,
         preferences: Preferences,
-        rendering_context: RenderingContext,
+        rendering_context: Rc<dyn RenderingContext>,
         mut embedder: Box<dyn EmbedderMethods>,
         window: Rc<Window>,
         user_agent: Option<String>,
