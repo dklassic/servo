@@ -411,9 +411,21 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
         compositor
     }
 
+    #[allow(unsafe_code)]
     pub fn deinit(self) {
-        if let Err(err) = self.rendering_context.make_gl_context_current() {
-            warn!("Failed to make GL context current: {:?}", err);
+        unsafe {
+            let device = self
+                .rendering_context
+                .connection()
+                .create_device_from_native_device(self.rendering_context.native_device())
+                .unwrap();
+            let context = device
+                .create_context_from_native_context(self.rendering_context.native_context())
+                .unwrap();
+
+            if let Err(err) = device.make_context_current(&context) {
+                warn!("Failed to make GL context current: {:?}", err);
+            }
         }
         self.webrender.deinit();
     }
@@ -467,10 +479,30 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
     /// The underlying native surface can be lost during servo's lifetime.
     /// On Android, for example, this happens when the app is sent to background.
     /// We need to unbind the surface so that we don't try to use it again.
+    #[allow(unsafe_code)]
     pub fn invalidate_native_surface(&mut self) {
         debug!("Invalidating native surface in compositor");
-        if let Err(e) = self.rendering_context.unbind_native_surface_from_context() {
-            warn!("Unbinding native surface from context failed ({:?})", e);
+        unsafe {
+            let device = self
+                .rendering_context
+                .connection()
+                .create_device_from_native_device(self.rendering_context.native_device())
+                .unwrap();
+            let mut context = device
+                .create_context_from_native_context(self.rendering_context.native_context())
+                .unwrap();
+            match device.unbind_surface_from_context(&mut context) {
+                Ok(surface) => {
+                    if let Some(mut surface) = surface {
+                        if let Err(e) = device.destroy_surface(&mut context, &mut surface) {
+                            warn!("Unbinding native surface from context failed ({:?})", e);
+                        }
+                    }
+                },
+                Err(e) => {
+                    warn!("Unbinding native surface from context failed ({:?})", e);
+                },
+            }
         }
     }
 
@@ -482,13 +514,15 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
     pub fn replace_native_surface(&mut self, native_widget: *mut c_void, coords: DeviceIntSize) {
         debug!("Replacing native surface in compositor: {native_widget:?}");
         let connection = self.rendering_context.connection();
-        let native_widget =
-            unsafe { connection.create_native_widget_from_ptr(native_widget, coords.to_untyped()) };
-        if let Err(e) = self
-            .rendering_context
-            .bind_native_surface_to_context(native_widget)
-        {
-            warn!("Binding native surface to context failed ({:?})", e);
+        unsafe {
+            let native_widget =
+                connection.create_native_widget_from_ptr(native_widget, coords.to_untyped());
+            if let Err(e) = self
+                .rendering_context
+                .bind_native_surface_to_context(native_widget)
+            {
+                warn!("Binding native surface to context failed ({:?})", e);
+            }
         }
     }
 
@@ -606,8 +640,8 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
 
             CompositorMsg::LoadComplete(_) => {
                 // If we're painting in headless mode, schedule a recomposite.
-                if matches!(self.composite_target, CompositeTarget::PngFile(_)) ||
-                    self.exit_after_load
+                if matches!(self.composite_target, CompositeTarget::PngFile(_))
+                    || self.exit_after_load
                 {
                     self.composite_if_necessary(CompositingReason::Headless);
                 }
@@ -1350,8 +1384,8 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
         }
 
         // A size change could also mean a resolution change.
-        if self.embedder_coordinates.hidpi_factor == old_coords.hidpi_factor &&
-            self.embedder_coordinates.viewport == old_coords.viewport
+        if self.embedder_coordinates.hidpi_factor == old_coords.hidpi_factor
+            && self.embedder_coordinates.viewport == old_coords.viewport
         {
             return false;
         }
@@ -1728,8 +1762,8 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
         let scroll_location = match scroll_location {
             ScrollLocation::Delta(delta) => {
                 let device_pixels_per_page = self.device_pixels_per_page_pixel();
-                let scaled_delta = (Vector2D::from_untyped(delta.to_untyped()) /
-                    device_pixels_per_page)
+                let scaled_delta = (Vector2D::from_untyped(delta.to_untyped())
+                    / device_pixels_per_page)
                     .to_untyped();
                 let calculated_delta = LayoutVector2D::from_untyped(scaled_delta);
                 ScrollLocation::Delta(calculated_delta)
@@ -1780,8 +1814,8 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
 
         let mut pipeline_ids = vec![];
         for (pipeline_id, pipeline_details) in &self.pipeline_details {
-            if (pipeline_details.animations_running || pipeline_details.animation_callbacks_running) &&
-                !pipeline_details.throttled
+            if (pipeline_details.animations_running || pipeline_details.animation_callbacks_running)
+                && !pipeline_details.throttled
             {
                 pipeline_ids.push(*pipeline_id);
             }
@@ -1990,8 +2024,8 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
     pub fn composite(&mut self) {
         match self.composite_specific_target(self.composite_target.clone(), None) {
             Ok(_) => {
-                if matches!(self.composite_target, CompositeTarget::PngFile(_)) ||
-                    self.exit_after_load
+                if matches!(self.composite_target, CompositeTarget::PngFile(_))
+                    || self.exit_after_load
                 {
                     println!("Shutting down the Constellation after generating an output file or exit flag specified");
                     self.start_shutting_down();
@@ -2011,6 +2045,7 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
         feature = "tracing",
         tracing::instrument(skip_all, fields(servo_profiling = true), level = "trace")
     )]
+    #[allow(unsafe_code)]
     fn composite_specific_target(
         &mut self,
         target: CompositeTarget,
@@ -2025,8 +2060,18 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
 
         let size = self.embedder_coordinates.framebuffer.to_u32();
 
-        if let Err(err) = self.rendering_context.make_gl_context_current() {
-            warn!("Failed to make GL context current: {:?}", err);
+        unsafe {
+            let device = self
+                .rendering_context
+                .connection()
+                .create_device_from_native_device(self.rendering_context.native_device())
+                .unwrap();
+            let context = device
+                .create_context_from_native_context(self.rendering_context.native_context())
+                .unwrap();
+            if let Err(err) = device.make_context_current(&context) {
+                warn!("Failed to make GL context current: {:?}", err);
+            }
         }
         self.assert_no_gl_error();
 
@@ -2379,6 +2424,7 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
         feature = "tracing",
         tracing::instrument(skip_all, fields(servo_profiling = true), level = "trace")
     )]
+    #[allow(unsafe_code)]
     pub fn perform_updates(&mut self) -> bool {
         if self.shutdown_state == ShutdownState::FinishedShuttingDown {
             return false;
@@ -2403,8 +2449,17 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
         self.webxr_main_thread.run_one_frame();
 
         // The WebXR thread may make a different context current
-        let _ = self.rendering_context.make_gl_context_current();
-
+        unsafe {
+            let device = self
+                .rendering_context
+                .connection()
+                .create_device_from_native_device(self.rendering_context.native_device())
+                .unwrap();
+            let context = device
+                .create_context_from_native_context(self.rendering_context.native_context())
+                .unwrap();
+            let _ = device.make_context_current(&context);
+        }
         if !self.pending_scroll_zoom_events.is_empty() {
             self.process_pending_scroll_events()
         }
@@ -2450,9 +2505,9 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
         let mut flags = self.webrender.get_debug_flags();
         let flag = match option {
             WebRenderDebugOption::Profiler => {
-                webrender::DebugFlags::PROFILER_DBG |
-                    webrender::DebugFlags::GPU_TIME_QUERIES |
-                    webrender::DebugFlags::GPU_SAMPLE_QUERIES
+                webrender::DebugFlags::PROFILER_DBG
+                    | webrender::DebugFlags::GPU_TIME_QUERIES
+                    | webrender::DebugFlags::GPU_SAMPLE_QUERIES
             },
             WebRenderDebugOption::TextureCacheDebug => webrender::DebugFlags::TEXTURE_CACHE_DBG,
             WebRenderDebugOption::RenderTargetDebug => webrender::DebugFlags::RENDER_TARGET_DBG,

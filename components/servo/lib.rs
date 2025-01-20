@@ -233,6 +233,7 @@ where
         )
     )]
     #[allow(clippy::new_ret_no_self)]
+    #[allow(unsafe_code)]
     pub fn new(
         opts: Opts,
         preferences: Preferences,
@@ -283,23 +284,57 @@ where
 
         // Get GL bindings
         let webrender_gl = match rendering_context.connection().gl_api() {
-            GLApi::GL => unsafe { gl::GlFns::load_with(|s| rendering_context.get_proc_address(s)) },
+            GLApi::GL => unsafe {
+                let device = rendering_context
+                    .connection()
+                    .create_device_from_native_device(rendering_context.native_device())
+                    .unwrap();
+                let context = device
+                    .create_context_from_native_context(rendering_context.native_context())
+                    .unwrap();
+                gl::GlFns::load_with(|s| device.get_proc_address(&context, s))
+            },
             GLApi::GLES => unsafe {
-                gl::GlesFns::load_with(|s| rendering_context.get_proc_address(s))
+                let device = rendering_context
+                    .connection()
+                    .create_device_from_native_device(rendering_context.native_device())
+                    .unwrap();
+                let context = device
+                    .create_context_from_native_context(rendering_context.native_context())
+                    .unwrap();
+                gl::GlesFns::load_with(|s| device.get_proc_address(&context, s))
             },
         };
 
         // Make sure the gl context is made current.
-        rendering_context.make_gl_context_current().unwrap();
-        debug_assert_eq!(webrender_gl.get_error(), gleam::gl::NO_ERROR,);
+        unsafe {
+            let device = rendering_context
+                .connection()
+                .create_device_from_native_device(rendering_context.native_device())
+                .unwrap();
+            let context = device
+                .create_context_from_native_context(rendering_context.native_context())
+                .unwrap();
+            device.make_context_current(&context).unwrap();
 
-        // Bind the webrender framebuffer
-        let framebuffer_object = rendering_context
-            .context_surface_info()
-            .unwrap_or(None)
-            .map(|info| info.framebuffer_object)
-            .unwrap_or(0);
-        webrender_gl.bind_framebuffer(gleam::gl::FRAMEBUFFER, framebuffer_object);
+            debug_assert_eq!(webrender_gl.get_error(), gleam::gl::NO_ERROR,);
+
+            // Bind the webrender framebuffer
+            let device = rendering_context
+                .connection()
+                .create_device_from_native_device(rendering_context.native_device())
+                .unwrap();
+            let context = device
+                .create_context_from_native_context(rendering_context.native_context())
+                .unwrap();
+            device.make_context_current(&context).unwrap();
+            let framebuffer_object = device
+                .context_surface_info(&context)
+                .unwrap_or(None)
+                .map(|info| info.framebuffer_object)
+                .unwrap_or(0);
+            webrender_gl.bind_framebuffer(gleam::gl::FRAMEBUFFER, framebuffer_object);
+        }
 
         // Reserving a namespace to create TopLevelBrowsingContextId.
         PipelineNamespace::install(PipelineNamespaceId(0));
@@ -590,6 +625,7 @@ where
         None
     }
 
+    #[allow(unsafe_code)]
     fn create_media_window_gl_context(
         external_image_handlers: &mut WebrenderExternalImageHandlers,
         external_images: Arc<Mutex<WebrenderExternalImageRegistry>>,
@@ -622,30 +658,38 @@ where
                     );
                 },
             };
-
         let api = rendering_context.connection().gl_api();
-        let attributes = rendering_context.context_attributes();
-        let GLVersion { major, minor } = attributes.version;
-        let gl_api = match api {
-            GLApi::GL if major >= 3 && minor >= 2 => GlApi::OpenGL3,
-            GLApi::GL => GlApi::OpenGL,
-            GLApi::GLES if major > 1 => GlApi::Gles2,
-            GLApi::GLES => GlApi::Gles1,
-        };
+        unsafe {
+            let device = rendering_context
+                .connection()
+                .create_device_from_native_device(rendering_context.native_device())
+                .unwrap();
+            let context = device
+                .create_context_from_native_context(rendering_context.native_context())
+                .unwrap();
+            let descriptor = &device.context_descriptor(&context);
+            let attributes = device.context_descriptor_attributes(descriptor);
+            let GLVersion { major, minor } = attributes.version;
+            let gl_api = match api {
+                GLApi::GL if major >= 3 && minor >= 2 => GlApi::OpenGL3,
+                GLApi::GL => GlApi::OpenGL,
+                GLApi::GLES if major > 1 => GlApi::Gles2,
+                GLApi::GLES => GlApi::Gles1,
+            };
+            assert!(!matches!(gl_context, GlContext::Unknown));
+            let (glplayer_threads, image_handler) = GLPlayerThreads::new(external_images.clone());
+            external_image_handlers.set_handler(image_handler, WebrenderImageHandlerType::Media);
 
-        assert!(!matches!(gl_context, GlContext::Unknown));
-        let (glplayer_threads, image_handler) = GLPlayerThreads::new(external_images.clone());
-        external_image_handlers.set_handler(image_handler, WebrenderImageHandlerType::Media);
-
-        (
-            WindowGLContext {
-                gl_context,
-                native_display,
-                gl_api,
-                glplayer_chan: Some(GLPlayerThreads::pipeline(&glplayer_threads)),
-            },
-            Some(glplayer_threads),
-        )
+            (
+                WindowGLContext {
+                    gl_context,
+                    native_display,
+                    gl_api,
+                    glplayer_chan: Some(GLPlayerThreads::pipeline(&glplayer_threads)),
+                },
+                Some(glplayer_threads),
+            )
+        }
     }
 
     fn handle_window_event(&mut self, event: EmbedderEvent) -> bool {

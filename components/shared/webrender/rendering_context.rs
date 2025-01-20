@@ -21,6 +21,8 @@ pub trait RenderingContext {
     fn context(&self) -> NativeContext;
     fn resize(&self, size: Size2D<i32>) -> Result<(), Error>;
     fn present(&self) -> Result<(), Error>;
+    fn bind_native_surface_to_context(&self, native_widget: NativeWidget) -> Result<(), Error>;
+    fn connection(&self) -> Connection;
 }
 
 /// A Servo rendering context, which holds all of the information needed
@@ -45,6 +47,28 @@ impl Drop for RenderingContextData {
         let _ = device.destroy_context(context);
     }
 }
+impl RenderingContext for SurfmanRenderingContext {
+    fn device(&self) -> NativeDevice {
+        self.native_device()
+    }
+    fn context(&self) -> NativeContext {
+        self.native_context()
+    }
+    fn resize(&self, size: Size2D<i32>) -> Result<(), Error> {
+        self.resize(size)
+    }
+    fn present(&self) -> Result<(), Error> {
+        self.present()
+    }
+    
+    fn bind_native_surface_to_context(&self, native_widget: NativeWidget) -> Result<(), Error> {
+        self.bind_native_surface_to_context(native_widget)
+    }
+    
+    fn connection(&self) -> Connection {
+        self.connection()
+    }
+}
 
 impl SurfmanRenderingContext {
     pub fn create(
@@ -53,9 +77,9 @@ impl SurfmanRenderingContext {
         headless: Option<Size2D<i32>>,
     ) -> Result<Self, Error> {
         let mut device = connection.create_device(adapter)?;
-        let flags = ContextAttributeFlags::ALPHA |
-            ContextAttributeFlags::DEPTH |
-            ContextAttributeFlags::STENCIL;
+        let flags = ContextAttributeFlags::ALPHA
+            | ContextAttributeFlags::DEPTH
+            | ContextAttributeFlags::STENCIL;
         let version = match connection.gl_api() {
             GLApi::GLES => GLVersion { major: 3, minor: 0 },
             GLApi::GL => GLVersion { major: 3, minor: 2 },
