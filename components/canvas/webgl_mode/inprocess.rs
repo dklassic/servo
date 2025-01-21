@@ -51,10 +51,12 @@ impl WebGLComm {
         #[cfg(feature = "webxr")]
         let webxr_layer_grand_manager = webxr_init.layer_grand_manager();
 
-        let device = unsafe { rendering_context
+        let device = unsafe {
+            rendering_context
                 .connection()
                 .create_device_from_native_device(rendering_context.device())
-                .unwrap() };
+                .unwrap()
+        };
         // This implementation creates a single `WebGLThread` for all the pipelines.
         let init = WebGLThreadInit {
             webrender_api_sender,

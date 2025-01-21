@@ -28,6 +28,12 @@ pub trait RenderingContext {
     fn make_current(&self);
     fn framebuffer_object(&self) -> u32;
     fn gl_api(&self) -> Rc<dyn gleam::gl::Gl>;
+    fn invalidate_native_surface(&self);
+    fn replace_native_surface(
+        &self,
+        native_widget: *mut c_void,
+        coords: euclid::Size2D<i32, webrender_api::units::DevicePixel>,
+    );
 }
 
 /// A Servo rendering context, which holds all of the information needed
@@ -96,6 +102,24 @@ impl RenderingContext for SurfmanRenderingContext {
             },
         }
     }
+    fn invalidate_native_surface(&self) {
+        if let Err(e) = self.unbind_native_surface_from_context() {
+            warn!("Unbinding native surface from context failed ({:?})", e);
+        }
+    }
+    #[allow(unsafe_code)]
+    fn replace_native_surface(
+        &self,
+        native_widget: *mut c_void,
+        coords: euclid::Size2D<i32, webrender_api::units::DevicePixel>,
+    ) {
+        let connection = self.connection();
+        let native_widget =
+            unsafe { connection.create_native_widget_from_ptr(native_widget, coords.to_untyped()) };
+        if let Err(e) = self.bind_native_surface_to_context(native_widget) {
+            warn!("Binding native surface to context failed ({:?})", e);
+        }
+    }
 }
 
 impl SurfmanRenderingContext {
@@ -105,9 +129,9 @@ impl SurfmanRenderingContext {
         headless: Option<Size2D<i32>>,
     ) -> Result<Self, Error> {
         let mut device = connection.create_device(adapter)?;
-        let flags = ContextAttributeFlags::ALPHA
-            | ContextAttributeFlags::DEPTH
-            | ContextAttributeFlags::STENCIL;
+        let flags = ContextAttributeFlags::ALPHA |
+            ContextAttributeFlags::DEPTH |
+            ContextAttributeFlags::STENCIL;
         let version = match connection.gl_api() {
             GLApi::GLES => GLVersion { major: 3, minor: 0 },
             GLApi::GL => GLVersion { major: 3, minor: 2 },
