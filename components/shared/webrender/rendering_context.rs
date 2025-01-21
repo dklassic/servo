@@ -23,6 +23,7 @@ pub trait RenderingContext {
     fn present(&self) -> Result<(), Error>;
     fn bind_native_surface_to_context(&self, native_widget: NativeWidget) -> Result<(), Error>;
     fn connection(&self) -> Connection;
+    fn adapter(&self) -> Adapter;
 }
 
 /// A Servo rendering context, which holds all of the information needed
@@ -67,6 +68,9 @@ impl RenderingContext for SurfmanRenderingContext {
 
     fn connection(&self) -> Connection {
         self.connection()
+    }
+    fn adapter(&self) -> Adapter {
+        self.adapter()
     }
 }
 

@@ -13,6 +13,7 @@ use surfman::chains::{SwapChainAPI, SwapChains, SwapChainsAPI};
 use surfman::{Context, Device, SurfaceInfo, SurfaceTexture};
 use webrender::RenderApiSender;
 use webrender_api::DocumentId;
+use webrender_traits::rendering_context::{self, RenderingContext};
 use webrender_traits::{
     SurfmanRenderingContext, WebrenderExternalImageApi, WebrenderExternalImageRegistry,
     WebrenderImageSource,
@@ -35,7 +36,7 @@ impl WebGLComm {
     /// Creates a new `WebGLComm` object.
     pub fn new(
         // TODO pass native device and native context here
-        surfman: SurfmanRenderingContext,
+        rendering_context: &impl RenderingContext,
         webrender_api_sender: RenderApiSender,
         webrender_doc: DocumentId,
         external_images: Arc<Mutex<WebrenderExternalImageRegistry>>,
@@ -57,14 +58,14 @@ impl WebGLComm {
             sender: sender.clone(),
             receiver,
             webrender_swap_chains: webrender_swap_chains.clone(),
-            connection: surfman.connection(),
-            adapter: surfman.adapter(),
+            connection: rendering_context.connection(),
+            adapter: rendering_context.adapter(),
             api_type,
             #[cfg(feature = "webxr")]
             webxr_init,
         };
 
-        let external = WebGLExternalImages::new(surfman, webrender_swap_chains);
+        let external = WebGLExternalImages::new(rendering_context, webrender_swap_chains);
 
         WebGLThread::run_on_own_thread(init);
 
@@ -88,16 +89,16 @@ struct WebGLExternalImages {
 impl WebGLExternalImages {
     #[allow(unsafe_code)]
     fn new(
-        surfman: SurfmanRenderingContext,
+        rendering_context: &impl RenderingContext,
         swap_chains: SwapChains<WebGLContextId, Device>,
     ) -> Self {
         unsafe {
-            let device = surfman
+            let device = rendering_context
                 .connection()
-                .create_device_from_native_device(surfman.native_device())
+                .create_device_from_native_device(rendering_context.device())
                 .unwrap();
             let context = device
-                .create_context_from_native_context(surfman.native_context())
+                .create_context_from_native_context(rendering_context.context())
                 .unwrap();
             Self {
                 device,
