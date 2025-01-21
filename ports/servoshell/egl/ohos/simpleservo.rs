@@ -18,7 +18,7 @@ use servo::embedder_traits::resources;
 pub use servo::embedder_traits::EventLoopWaker;
 use servo::euclid::Size2D;
 use servo::servo_url::ServoUrl;
-use servo::webrender_traits::RenderingContext;
+use servo::webrender_traits::SurfmanRenderingContext;
 use servo::{self, Servo};
 use surfman::{Connection, SurfaceType};
 use xcomponent_sys::{OH_NativeXComponent, OH_NativeXComponent_GetXComponentSize};
@@ -93,7 +93,7 @@ pub fn init(
     let surface_type = SurfaceType::Widget { native_widget };
 
     info!("Creating rendering context");
-    let rendering_context = RenderingContext::create(&connection, &adapter, None)
+    let rendering_context = SurfmanRenderingContext::create(&connection, &adapter, None)
         .or(Err("Failed to create surface manager"))?;
     let surface = rendering_context
         .create_surface(surface_type)

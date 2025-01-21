@@ -28,6 +28,7 @@ pub trait RenderingContext {
     fn make_current(&self);
     fn framebuffer_object(&self) -> u32;
     fn gl_api(&self) -> Rc<dyn gleam::gl::Gl>;
+    fn gl_version(&self) -> GLVersion;
     fn invalidate_native_surface(&self);
     fn replace_native_surface(
         &self,
@@ -107,6 +108,13 @@ impl RenderingContext for SurfmanRenderingContext {
                 gl::GlesFns::load_with(|s| device.get_proc_address(&context, s))
             },
         }
+    }
+    fn gl_version(&self) -> GLVersion {
+        let device = self.0.device.borrow();
+        let context = self.0.context.borrow();
+        let descriptor = device.context_descriptor(&context);
+        let attributes = device.context_descriptor_attributes(&descriptor);
+        attributes.version
     }
     fn invalidate_native_surface(&self) {
         if let Err(e) = self.unbind_native_surface_from_context() {

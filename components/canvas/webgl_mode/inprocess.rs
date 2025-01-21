@@ -10,13 +10,12 @@ use euclid::default::Size2D;
 use fnv::FnvHashMap;
 use log::debug;
 use surfman::chains::{SwapChainAPI, SwapChains, SwapChainsAPI};
-use surfman::{Context, Device, NativeConnection, SurfaceInfo, SurfaceTexture};
+use surfman::{Context, Device, SurfaceInfo, SurfaceTexture};
 use webrender::RenderApiSender;
 use webrender_api::DocumentId;
-use webrender_traits::rendering_context::{self, RenderingContext};
+use webrender_traits::rendering_context::RenderingContext;
 use webrender_traits::{
-    SurfmanRenderingContext, WebrenderExternalImageApi, WebrenderExternalImageRegistry,
-    WebrenderImageSource,
+    WebrenderExternalImageApi, WebrenderExternalImageRegistry, WebrenderImageSource,
 };
 #[cfg(feature = "webxr")]
 use webxr::SurfmanGL as WebXRSurfman;
@@ -36,7 +35,6 @@ impl WebGLComm {
     /// Creates a new `WebGLComm` object.
     #[allow(unsafe_code)]
     pub fn new(
-        // TODO pass native device and native context here
         rendering_context: &impl RenderingContext,
         webrender_api_sender: RenderApiSender,
         webrender_doc: DocumentId,
@@ -154,7 +152,7 @@ impl WebGLExternalImages {
 
 impl Drop for WebGLExternalImages {
     fn drop(&mut self) {
-        self.device.destroy_context(&mut self.context);
+        let _ = self.device.destroy_context(&mut self.context);
     }
 }
 

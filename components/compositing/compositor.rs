@@ -51,8 +51,7 @@ use webrender_api::{
 use webrender_traits::display_list::{HitTestInfo, ScrollTree};
 use webrender_traits::rendering_context::RenderingContext;
 use webrender_traits::{
-    CompositorHitTestResult, CrossProcessCompositorMessage, ImageUpdate, SurfmanRenderingContext,
-    UntrustedNodeAddress,
+    CompositorHitTestResult, CrossProcessCompositorMessage, ImageUpdate, UntrustedNodeAddress,
 };
 
 use crate::gl::RenderTargetInfo;
@@ -98,7 +97,7 @@ impl FrameTreeId {
 }
 
 /// NB: Never block on the constellation, because sometimes the constellation blocks on us.
-pub struct IOCompositor<Window: WindowMethods + ?Sized> {
+pub struct IOCompositor<Window: WindowMethods + ?Sized, R: RenderingContext> {
     /// The application window.
     pub window: Rc<Window>,
 
@@ -166,7 +165,7 @@ pub struct IOCompositor<Window: WindowMethods + ?Sized> {
     webrender_api: RenderApi,
 
     /// The surfman instance that webrender targets
-    rendering_context: SurfmanRenderingContext,
+    rendering_context: R,
 
     /// The GL bindings for webrender
     webrender_gl: Rc<dyn gleam::gl::Gl>,
@@ -357,10 +356,10 @@ pub enum CompositeTarget {
     PngFile(Rc<String>),
 }
 
-impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
+impl<Window: WindowMethods + ?Sized, R: RenderingContext> IOCompositor<Window, R> {
     pub fn new(
         window: Rc<Window>,
-        state: InitialCompositorState,
+        state: InitialCompositorState<R>,
         composite_target: CompositeTarget,
         exit_after_load: bool,
         convert_mouse_to_touch: bool,
@@ -483,12 +482,8 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
         let connection = self.rendering_context.connection();
         let native_widget =
             unsafe { connection.create_native_widget_from_ptr(native_widget, coords.to_untyped()) };
-        if let Err(e) = self
-            .rendering_context
-            .bind_native_surface_to_context(native_widget)
-        {
-            warn!("Binding native surface to context failed ({:?})", e);
-        }
+        self.rendering_context
+            .bind_native_surface_to_context(native_widget);
     }
 
     fn handle_browser_message(&mut self, msg: CompositorMsg) -> bool {
@@ -1341,9 +1336,7 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
             let mut transaction = Transaction::new();
             let size = self.embedder_coordinates.get_viewport();
             transaction.set_document_view(size);
-            if let Err(e) = self.rendering_context.resize(size.size().to_untyped()) {
-                warn!("Failed to resize surface: {e:?}");
-            }
+            self.rendering_context.resize(size.size().to_untyped());
             self.webrender_api
                 .send_transaction(self.webrender_document, transaction);
         }
@@ -2276,9 +2269,7 @@ impl<Window: WindowMethods + ?Sized> IOCompositor<Window> {
         #[cfg(feature = "tracing")]
         let _span =
             tracing::trace_span!("Compositor Present Surface", servo_profiling = true).entered();
-        if let Err(err) = self.rendering_context.present() {
-            warn!("Failed to present surface: {:?}", err);
-        }
+        self.rendering_context.present();
         self.waiting_on_present = false;
     }
 

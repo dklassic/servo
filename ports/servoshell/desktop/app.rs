@@ -45,7 +45,7 @@ pub struct App {
     opts: Opts,
     preferences: Preferences,
     servo_shell_preferences: ServoShellPreferences,
-    servo: Option<Servo<dyn WindowPortsMethods>>,
+    servo: Option<Servo<dyn WindowPortsMethods, SurfmanRenderingContext>>,
     webviews: Option<WebViewManager<dyn WindowPortsMethods>>,
     event_queue: Vec<EmbedderEvent>,
     suspended: Cell<bool>,

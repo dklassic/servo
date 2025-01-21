@@ -11,7 +11,7 @@ use crossbeam_channel::Sender;
 use profile_traits::{mem, time};
 use webrender::RenderApi;
 use webrender_api::DocumentId;
-use webrender_traits::SurfmanRenderingContext;
+use webrender_traits::rendering_context::RenderingContext;
 
 pub use crate::compositor::{CompositeTarget, IOCompositor, ShutdownState};
 
@@ -25,7 +25,7 @@ pub mod webview;
 pub mod windowing;
 
 /// Data used to construct a compositor.
-pub struct InitialCompositorState {
+pub struct InitialCompositorState<R: RenderingContext> {
     /// A channel to the compositor.
     pub sender: CompositorProxy,
     /// A port on which messages inbound to the compositor can be received.
@@ -40,7 +40,7 @@ pub struct InitialCompositorState {
     pub webrender: webrender::Renderer,
     pub webrender_document: DocumentId,
     pub webrender_api: RenderApi,
-    pub rendering_context: SurfmanRenderingContext,
+    pub rendering_context: R,
     pub webrender_gl: Rc<dyn gleam::gl::Gl>,
     #[cfg(feature = "webxr")]
     pub webxr_main_thread: webxr::MainThreadRegistry,
