@@ -60,11 +60,11 @@ impl RenderingContext for SurfmanRenderingContext {
     fn present(&self) -> Result<(), Error> {
         self.present()
     }
-    
+
     fn bind_native_surface_to_context(&self, native_widget: NativeWidget) -> Result<(), Error> {
         self.bind_native_surface_to_context(native_widget)
     }
-    
+
     fn connection(&self) -> Connection {
         self.connection()
     }
@@ -77,9 +77,9 @@ impl SurfmanRenderingContext {
         headless: Option<Size2D<i32>>,
     ) -> Result<Self, Error> {
         let mut device = connection.create_device(adapter)?;
-        let flags = ContextAttributeFlags::ALPHA
-            | ContextAttributeFlags::DEPTH
-            | ContextAttributeFlags::STENCIL;
+        let flags = ContextAttributeFlags::ALPHA |
+            ContextAttributeFlags::DEPTH |
+            ContextAttributeFlags::STENCIL;
         let version = match connection.gl_api() {
             GLApi::GLES => GLVersion { major: 3, minor: 0 },
             GLApi::GL => GLVersion { major: 3, minor: 2 },
