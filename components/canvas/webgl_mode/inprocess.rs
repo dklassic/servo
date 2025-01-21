@@ -10,7 +10,7 @@ use euclid::default::Size2D;
 use fnv::FnvHashMap;
 use log::debug;
 use surfman::chains::{SwapChainAPI, SwapChains, SwapChainsAPI};
-use surfman::{Context, Device, SurfaceInfo, SurfaceTexture};
+use surfman::{Context, Device, NativeConnection, SurfaceInfo, SurfaceTexture};
 use webrender::RenderApiSender;
 use webrender_api::DocumentId;
 use webrender_traits::rendering_context::{self, RenderingContext};
@@ -34,6 +34,7 @@ pub struct WebGLComm {
 
 impl WebGLComm {
     /// Creates a new `WebGLComm` object.
+    #[allow(unsafe_code)]
     pub fn new(
         // TODO pass native device and native context here
         rendering_context: &impl RenderingContext,
@@ -50,6 +51,10 @@ impl WebGLComm {
         #[cfg(feature = "webxr")]
         let webxr_layer_grand_manager = webxr_init.layer_grand_manager();
 
+        let device = unsafe { rendering_context
+                .connection()
+                .create_device_from_native_device(rendering_context.device())
+                .unwrap() };
         // This implementation creates a single `WebGLThread` for all the pipelines.
         let init = WebGLThreadInit {
             webrender_api_sender,
@@ -59,7 +64,7 @@ impl WebGLComm {
             receiver,
             webrender_swap_chains: webrender_swap_chains.clone(),
             connection: rendering_context.connection(),
-            adapter: rendering_context.adapter(),
+            adapter: device.adapter(),
             api_type,
             #[cfg(feature = "webxr")]
             webxr_init,

@@ -96,6 +96,7 @@ pub use webgpu;
 use webgpu::swapchain::WGPUImageMap;
 use webrender::{RenderApiSender, ShaderPrecacheFlags, UploadMethod, ONE_TIME_USAGE_HINT};
 use webrender_api::{ColorF, DocumentId, FramePublishId};
+use webrender_traits::rendering_context::RenderingContext;
 use webrender_traits::{
     CrossProcessCompositorApi, SurfmanRenderingContext, WebrenderExternalImageHandlers,
     WebrenderExternalImageRegistry, WebrenderImageHandlerType,
@@ -283,58 +284,15 @@ where
         };
 
         // Get GL bindings
-        let webrender_gl = match rendering_context.connection().gl_api() {
-            GLApi::GL => unsafe {
-                let device = rendering_context
-                    .connection()
-                    .create_device_from_native_device(rendering_context.native_device())
-                    .unwrap();
-                let context = device
-                    .create_context_from_native_context(rendering_context.native_context())
-                    .unwrap();
-                gl::GlFns::load_with(|s| device.get_proc_address(&context, s))
-            },
-            GLApi::GLES => unsafe {
-                let device = rendering_context
-                    .connection()
-                    .create_device_from_native_device(rendering_context.native_device())
-                    .unwrap();
-                let context = device
-                    .create_context_from_native_context(rendering_context.native_context())
-                    .unwrap();
-                gl::GlesFns::load_with(|s| device.get_proc_address(&context, s))
-            },
-        };
+        let webrender_gl = rendering_context.gl_api();
 
         // Make sure the gl context is made current.
-        unsafe {
-            let device = rendering_context
-                .connection()
-                .create_device_from_native_device(rendering_context.native_device())
-                .unwrap();
-            let context = device
-                .create_context_from_native_context(rendering_context.native_context())
-                .unwrap();
-            device.make_context_current(&context).unwrap();
+        rendering_context.make_current();
+        debug_assert_eq!(webrender_gl.get_error(), gleam::gl::NO_ERROR,);
 
-            debug_assert_eq!(webrender_gl.get_error(), gleam::gl::NO_ERROR,);
-
-            // Bind the webrender framebuffer
-            let device = rendering_context
-                .connection()
-                .create_device_from_native_device(rendering_context.native_device())
-                .unwrap();
-            let context = device
-                .create_context_from_native_context(rendering_context.native_context())
-                .unwrap();
-            device.make_context_current(&context).unwrap();
-            let framebuffer_object = device
-                .context_surface_info(&context)
-                .unwrap_or(None)
-                .map(|info| info.framebuffer_object)
-                .unwrap_or(0);
-            webrender_gl.bind_framebuffer(gleam::gl::FRAMEBUFFER, framebuffer_object);
-        }
+        // Bind the webrender framebuffer
+        let framebuffer_object = rendering_context.framebuffer_object();
+        webrender_gl.bind_framebuffer(gleam::gl::FRAMEBUFFER, framebuffer_object);
 
         // Reserving a namespace to create TopLevelBrowsingContextId.
         PipelineNamespace::install(PipelineNamespaceId(0));
@@ -454,7 +412,7 @@ where
             webxr_layer_grand_manager,
             image_handler,
         } = WebGLComm::new(
-            rendering_context.clone(),
+            &rendering_context.clone(),
             webrender_api.create_sender(),
             webrender_document,
             external_images.clone(),

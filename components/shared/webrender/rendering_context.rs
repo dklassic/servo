@@ -9,6 +9,7 @@ use std::ffi::c_void;
 use std::rc::Rc;
 
 use euclid::default::Size2D;
+use gleam::gl;
 use surfman::chains::{PreserveBuffer, SwapChain};
 use surfman::{
     Adapter, Connection, Context, ContextAttributeFlags, ContextAttributes, Device, Error, GLApi,
@@ -19,11 +20,13 @@ use surfman::{
 pub trait RenderingContext {
     fn device(&self) -> NativeDevice;
     fn context(&self) -> NativeContext;
-    fn resize(&self, size: Size2D<i32>) -> Result<(), Error>;
-    fn present(&self) -> Result<(), Error>;
-    fn bind_native_surface_to_context(&self, native_widget: NativeWidget) -> Result<(), Error>;
+    fn resize(&self, size: Size2D<i32>);
+    fn present(&self);
+    fn bind_native_surface_to_context(&self, native_widget: NativeWidget);
     fn connection(&self) -> Connection;
-    fn adapter(&self) -> Adapter;
+    fn make_current(&self);
+    fn framebuffer_object(&self) -> u32;
+    fn gl_api(&self) -> Rc<dyn gleam::gl::Gl>;
 }
 
 /// A Servo rendering context, which holds all of the information needed
@@ -55,22 +58,41 @@ impl RenderingContext for SurfmanRenderingContext {
     fn context(&self) -> NativeContext {
         self.native_context()
     }
-    fn resize(&self, size: Size2D<i32>) -> Result<(), Error> {
-        self.resize(size)
+    fn resize(&self, size: Size2D<i32>) {
+        self.resize(size);
     }
-    fn present(&self) -> Result<(), Error> {
-        self.present()
+    fn present(&self) {
+        self.present();
     }
 
-    fn bind_native_surface_to_context(&self, native_widget: NativeWidget) -> Result<(), Error> {
-        self.bind_native_surface_to_context(native_widget)
+    fn bind_native_surface_to_context(&self, native_widget: NativeWidget) {
+        self.bind_native_surface_to_context(native_widget);
     }
 
     fn connection(&self) -> Connection {
         self.connection()
     }
-    fn adapter(&self) -> Adapter {
-        self.adapter()
+    fn make_current(&self) {
+        self.make_gl_context_current();
+        warn!("Failed to make GL context current: {:?}", err);
+    }
+    fn framebuffer_object(&self) -> u32 {
+        self.context_surface_info()
+            .unwrap_or(None)
+            .map(|info| info.framebuffer_object)
+            .unwrap_or(0)
+    }
+
+    #[allow(unsafe_code)]
+    fn gl_api(&self) -> Rc<dyn gleam::gl::Gl> {
+        let context = self.0.context.borrow();
+        let device = self.0.device.borrow();
+        match self.connection().gl_api() {
+            GLApi::GL => unsafe { gl::GlFns::load_with(|s| device.get_proc_address(&context, s)) },
+            GLApi::GLES => unsafe {
+                gl::GlesFns::load_with(|s| device.get_proc_address(&context, s))
+            },
+        }
     }
 }
 
@@ -81,9 +103,9 @@ impl SurfmanRenderingContext {
         headless: Option<Size2D<i32>>,
     ) -> Result<Self, Error> {
         let mut device = connection.create_device(adapter)?;
-        let flags = ContextAttributeFlags::ALPHA |
-            ContextAttributeFlags::DEPTH |
-            ContextAttributeFlags::STENCIL;
+        let flags = ContextAttributeFlags::ALPHA
+            | ContextAttributeFlags::DEPTH
+            | ContextAttributeFlags::STENCIL;
         let version = match connection.gl_api() {
             GLApi::GLES => GLVersion { major: 3, minor: 0 },
             GLApi::GL => GLVersion { major: 3, minor: 2 },
