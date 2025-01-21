@@ -123,6 +123,7 @@ impl RenderingContext for SurfmanRenderingContext {
         }
     }
     #[allow(unsafe_code)]
+    #[allow(clippy::not_unsafe_ptr_arg_deref)] // It has an unsafe block inside
     fn replace_native_surface(
         &self,
         native_widget: *mut c_void,

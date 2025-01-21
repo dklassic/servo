@@ -473,17 +473,10 @@ impl<Window: WindowMethods + ?Sized, R: RenderingContext> IOCompositor<Window, R
     /// On Android, this function will be called when the app moves to foreground
     /// and the system creates a new native surface that needs to bound to the current
     /// context.
-    #[allow(unsafe_code)]
-    #[allow(clippy::not_unsafe_ptr_arg_deref)] // It has an unsafe block inside
     pub fn replace_native_surface(&mut self, native_widget: *mut c_void, coords: DeviceIntSize) {
         debug!("Replacing native surface in compositor: {native_widget:?}");
         self.rendering_context
             .replace_native_surface(native_widget, coords);
-        let connection = self.rendering_context.connection();
-        let native_widget =
-            unsafe { connection.create_native_widget_from_ptr(native_widget, coords.to_untyped()) };
-        self.rendering_context
-            .bind_native_surface_to_context(native_widget);
     }
 
     fn handle_browser_message(&mut self, msg: CompositorMsg) -> bool {
@@ -600,8 +593,8 @@ impl<Window: WindowMethods + ?Sized, R: RenderingContext> IOCompositor<Window, R
 
             CompositorMsg::LoadComplete(_) => {
                 // If we're painting in headless mode, schedule a recomposite.
-                if matches!(self.composite_target, CompositeTarget::PngFile(_)) ||
-                    self.exit_after_load
+                if matches!(self.composite_target, CompositeTarget::PngFile(_))
+                    || self.exit_after_load
                 {
                     self.composite_if_necessary(CompositingReason::Headless);
                 }
@@ -1342,8 +1335,8 @@ impl<Window: WindowMethods + ?Sized, R: RenderingContext> IOCompositor<Window, R
         }
 
         // A size change could also mean a resolution change.
-        if self.embedder_coordinates.hidpi_factor == old_coords.hidpi_factor &&
-            self.embedder_coordinates.viewport == old_coords.viewport
+        if self.embedder_coordinates.hidpi_factor == old_coords.hidpi_factor
+            && self.embedder_coordinates.viewport == old_coords.viewport
         {
             return false;
         }
@@ -1720,8 +1713,8 @@ impl<Window: WindowMethods + ?Sized, R: RenderingContext> IOCompositor<Window, R
         let scroll_location = match scroll_location {
             ScrollLocation::Delta(delta) => {
                 let device_pixels_per_page = self.device_pixels_per_page_pixel();
-                let scaled_delta = (Vector2D::from_untyped(delta.to_untyped()) /
-                    device_pixels_per_page)
+                let scaled_delta = (Vector2D::from_untyped(delta.to_untyped())
+                    / device_pixels_per_page)
                     .to_untyped();
                 let calculated_delta = LayoutVector2D::from_untyped(scaled_delta);
                 ScrollLocation::Delta(calculated_delta)
@@ -1772,8 +1765,8 @@ impl<Window: WindowMethods + ?Sized, R: RenderingContext> IOCompositor<Window, R
 
         let mut pipeline_ids = vec![];
         for (pipeline_id, pipeline_details) in &self.pipeline_details {
-            if (pipeline_details.animations_running || pipeline_details.animation_callbacks_running) &&
-                !pipeline_details.throttled
+            if (pipeline_details.animations_running || pipeline_details.animation_callbacks_running)
+                && !pipeline_details.throttled
             {
                 pipeline_ids.push(*pipeline_id);
             }
@@ -1982,8 +1975,8 @@ impl<Window: WindowMethods + ?Sized, R: RenderingContext> IOCompositor<Window, R
     pub fn composite(&mut self) {
         match self.composite_specific_target(self.composite_target.clone(), None) {
             Ok(_) => {
-                if matches!(self.composite_target, CompositeTarget::PngFile(_)) ||
-                    self.exit_after_load
+                if matches!(self.composite_target, CompositeTarget::PngFile(_))
+                    || self.exit_after_load
                 {
                     println!("Shutting down the Constellation after generating an output file or exit flag specified");
                     self.start_shutting_down();
@@ -2433,9 +2426,9 @@ impl<Window: WindowMethods + ?Sized, R: RenderingContext> IOCompositor<Window, R
         let mut flags = self.webrender.get_debug_flags();
         let flag = match option {
             WebRenderDebugOption::Profiler => {
-                webrender::DebugFlags::PROFILER_DBG |
-                    webrender::DebugFlags::GPU_TIME_QUERIES |
-                    webrender::DebugFlags::GPU_SAMPLE_QUERIES
+                webrender::DebugFlags::PROFILER_DBG
+                    | webrender::DebugFlags::GPU_TIME_QUERIES
+                    | webrender::DebugFlags::GPU_SAMPLE_QUERIES
             },
             WebRenderDebugOption::TextureCacheDebug => webrender::DebugFlags::TEXTURE_CACHE_DBG,
             WebRenderDebugOption::RenderTargetDebug => webrender::DebugFlags::RENDER_TARGET_DBG,
