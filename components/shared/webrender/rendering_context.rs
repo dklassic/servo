@@ -66,14 +66,20 @@ impl RenderingContext for SurfmanRenderingContext {
         self.native_context()
     }
     fn resize(&self, size: Size2D<i32>) {
-        self.resize(size);
+        if let Err(err) = self.resize(size) {
+            warn!("Failed to resize surface: {:?}", err);
+        }
     }
     fn present(&self) {
-        self.present();
+        if let Err(err) = self.present() {
+            warn!("Failed to present surface: {:?}", err);
+        }
     }
 
     fn bind_native_surface_to_context(&self, native_widget: NativeWidget) {
-        self.bind_native_surface_to_context(native_widget);
+        if let Err(err) = self.bind_native_surface_to_context(native_widget) {
+            warn!("Failed to bind native surface to context: {:?}", err);
+        }
     }
 
     fn connection(&self) -> Connection {
@@ -129,9 +135,9 @@ impl SurfmanRenderingContext {
         headless: Option<Size2D<i32>>,
     ) -> Result<Self, Error> {
         let mut device = connection.create_device(adapter)?;
-        let flags = ContextAttributeFlags::ALPHA |
-            ContextAttributeFlags::DEPTH |
-            ContextAttributeFlags::STENCIL;
+        let flags = ContextAttributeFlags::ALPHA
+            | ContextAttributeFlags::DEPTH
+            | ContextAttributeFlags::STENCIL;
         let version = match connection.gl_api() {
             GLApi::GLES => GLVersion { major: 3, minor: 0 },
             GLApi::GL => GLVersion { major: 3, minor: 2 },
