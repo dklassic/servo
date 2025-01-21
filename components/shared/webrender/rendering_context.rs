@@ -10,6 +10,7 @@ use std::rc::Rc;
 
 use euclid::default::Size2D;
 use gleam::gl;
+use log::warn;
 use surfman::chains::{PreserveBuffer, SwapChain};
 use surfman::{
     Adapter, Connection, Context, ContextAttributeFlags, ContextAttributes, Device, Error, GLApi,
@@ -73,8 +74,9 @@ impl RenderingContext for SurfmanRenderingContext {
         self.connection()
     }
     fn make_current(&self) {
-        self.make_gl_context_current();
-        warn!("Failed to make GL context current: {:?}", err);
+        if let Err(err) = self.make_gl_context_current() {
+            warn!("Failed to make GL context current: {:?}", err);
+        }
     }
     fn framebuffer_object(&self) -> u32 {
         self.context_surface_info()
