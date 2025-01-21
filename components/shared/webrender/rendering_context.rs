@@ -25,6 +25,7 @@ pub trait RenderingContext {
     fn present(&self);
     fn bind_native_surface_to_context(&self, native_widget: NativeWidget);
     fn connection(&self) -> Connection;
+    fn adapter(&self) -> Adapter;
     fn make_current(&self);
     fn framebuffer_object(&self) -> u32;
     fn gl_api(&self) -> Rc<dyn gleam::gl::Gl>;
@@ -66,6 +67,12 @@ impl RenderingContext for SurfmanRenderingContext {
     fn context(&self) -> NativeContext {
         self.native_context()
     }
+    fn connection(&self) -> Connection {
+        self.connection()
+    }
+    fn adapter(&self) -> Adapter {
+        self.adapter()
+    }
     fn resize(&self, size: Size2D<i32>) {
         if let Err(err) = self.resize(size) {
             warn!("Failed to resize surface: {:?}", err);
@@ -76,15 +83,10 @@ impl RenderingContext for SurfmanRenderingContext {
             warn!("Failed to present surface: {:?}", err);
         }
     }
-
     fn bind_native_surface_to_context(&self, native_widget: NativeWidget) {
         if let Err(err) = self.bind_native_surface_to_context(native_widget) {
             warn!("Failed to bind native surface to context: {:?}", err);
         }
-    }
-
-    fn connection(&self) -> Connection {
-        self.connection()
     }
     fn make_current(&self) {
         if let Err(err) = self.make_gl_context_current() {
@@ -97,7 +99,6 @@ impl RenderingContext for SurfmanRenderingContext {
             .map(|info| info.framebuffer_object)
             .unwrap_or(0)
     }
-
     #[allow(unsafe_code)]
     fn gl_api(&self) -> Rc<dyn gleam::gl::Gl> {
         let context = self.0.context.borrow();
@@ -143,9 +144,9 @@ impl SurfmanRenderingContext {
         headless: Option<Size2D<i32>>,
     ) -> Result<Self, Error> {
         let mut device = connection.create_device(adapter)?;
-        let flags = ContextAttributeFlags::ALPHA |
-            ContextAttributeFlags::DEPTH |
-            ContextAttributeFlags::STENCIL;
+        let flags = ContextAttributeFlags::ALPHA
+            | ContextAttributeFlags::DEPTH
+            | ContextAttributeFlags::STENCIL;
         let version = match connection.gl_api() {
             GLApi::GLES => GLVersion { major: 3, minor: 0 },
             GLApi::GL => GLVersion { major: 3, minor: 2 },
