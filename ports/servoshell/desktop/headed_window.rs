@@ -139,7 +139,6 @@ impl Window {
         let rendering_context =
             Rc::new(window_rendering_context.offscreen_context(rendering_context_size));
 
-        winit_window.set_ime_allowed(true);
 
         debug!("Created window {:?}", winit_window.id());
         Window {
@@ -703,6 +702,35 @@ impl WindowPortsMethods for Window {
 
     fn rendering_context(&self) -> Rc<dyn RenderingContext> {
         self.rendering_context.clone()
+    }
+    fn show_ime(
+        &self,
+        input_type: servo::InputMethodType,
+        _text: Option<(String, i32)>,
+        _multiline: bool,
+        position: servo::webrender_api::units::DeviceIntRect,
+    ) {
+        self.winit_window.set_ime_allowed(true);
+        self.winit_window.set_ime_purpose(match input_type {
+            servo::InputMethodType::Password => winit::window::ImePurpose::Password,
+            _ => winit::window::ImePurpose::Normal,
+        });
+
+        let (width, height) = (
+            position.max.x - position.min.x,
+            position.max.y - position.min.y,
+        );
+        self.winit_window.set_ime_cursor_area(
+            PhysicalPosition::new(
+                position.min.x,
+                position.min.y + (self.toolbar_height.get().0 as i32),
+            ),
+            PhysicalSize::new(width, height),
+        );
+    }
+
+    fn hide_ime(&self) {
+        self.winit_window.set_ime_allowed(false);
     }
 }
 
