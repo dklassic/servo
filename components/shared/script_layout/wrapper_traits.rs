@@ -285,8 +285,11 @@ pub trait ThreadSafeLayoutNode<'dom>: Clone + Copy + Debug + NodeInfo + PartialE
 
     fn node_text_content(self) -> Cow<'dom, str>;
 
-    /// If the insertion point is within this node, returns it. Otherwise, returns `None`.
+    /// If selection intersects this this node, return it. Otherwise, returns `None`.
     fn selection(&self) -> Option<Range<ByteIndex>>;
+
+    /// If the insertion point is within this node, returns it. Otherwise, returns `None`.
+    fn insertion_point(&self) -> Option<ByteIndex>;
 
     /// If this is an image element, returns its URL. If this is not an image element, fails.
     fn image_url(&self) -> Option<ServoUrl>;

@@ -386,6 +386,13 @@ impl<'dom> ThreadSafeLayoutNode<'dom> for ServoThreadSafeLayoutNode<'dom> {
         })
     }
 
+    fn insertion_point(&self) -> Option<ByteIndex> {
+        let this = unsafe { self.get_jsmanaged() };
+
+        this.insertion_point()
+            .map(|point| ByteIndex(point as isize))
+    }
+
     fn image_url(&self) -> Option<ServoUrl> {
         let this = unsafe { self.get_jsmanaged() };
         this.image_url()

@@ -7,7 +7,8 @@ use std::sync::Arc;
 use app_units::Au;
 use base::id::PipelineId;
 use base::print_tree::PrintTree;
-use fonts::{FontMetrics, GlyphStore};
+use fonts::{ByteIndex, FontMetrics, GlyphStore};
+use range::Range as ServoRange;
 use servo_arc::Arc as ServoArc;
 use style::Zero;
 use style::properties::ComputedValues;
@@ -70,6 +71,9 @@ pub(crate) struct TextFragment {
 
     /// Extra space to add for each justification opportunity.
     pub justification_adjustment: Au,
+    pub insertion_point: Option<ByteIndex>,
+    pub selection_range: Option<ServoRange<ByteIndex>>,
+    pub selected_style: ServoArc<ComputedValues>,
 }
 
 pub(crate) struct ImageFragment {
@@ -219,6 +223,10 @@ impl TextFragment {
                 .sum::<isize>(),
             self.rect,
         ));
+    }
+
+    pub fn has_selection(&self) -> bool {
+        self.selection_range.is_some() || self.insertion_point.is_some()
     }
 }
 
