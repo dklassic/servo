@@ -142,7 +142,7 @@ impl TextRunSegment {
             soft_wrap_policy = SegmentStartSoftWrapPolicy::Force;
         }
 
-        let mut byte_processed = 0;
+        let mut byte_processed = ByteIndex(0);
         for (run_index, run) in self.runs.iter().enumerate() {
             ifc.possibly_flush_deferred_forced_line_break();
 
@@ -150,7 +150,7 @@ impl TextRunSegment {
             // see any content. We don't line break immediately, because we'd like to finish processing
             // any ongoing inline boxes before ending the line.
             if run.is_single_preserved_newline() {
-                byte_processed += run.range.length().0;
+                byte_processed = byte_processed + run.range.length();
                 ifc.defer_forced_line_break();
                 continue;
             }
@@ -165,11 +165,11 @@ impl TextRunSegment {
                 self.font_index,
                 self.bidi_level,
                 ServoRange::<ByteIndex>::new(
-                    ByteIndex(byte_processed + self.range.start as isize),
-                    ByteIndex(run.range.length().0),
+                    byte_processed + ByteIndex(self.range.start as isize),
+                    run.range.length(),
                 ),
             );
-            byte_processed += run.range.length().0;
+            byte_processed = byte_processed + run.range.length();
         }
     }
 
